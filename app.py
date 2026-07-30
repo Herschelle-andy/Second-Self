@@ -214,9 +214,58 @@ def get_graph_html(graph_data):
     """
     return html_code
 
+# Callback functions to safely modify widget state before re-running script
+def capture_note_callback(raw_dir):
+    note_content = st.session_state.get("note_input_widget", "")
+    if note_content.strip():
+        capture.capture_note(raw_dir, note_content)
+        st.session_state["note_input_widget"] = ""
+        st.session_state["run_pipeline"] = True
+
+def capture_link_callback(raw_dir):
+    link_url = st.session_state.get("link_input_widget", "")
+    if link_url.strip():
+        capture.capture_link(raw_dir, link_url)
+        st.session_state["link_input_widget"] = ""
+        st.session_state["run_pipeline"] = True
+
+def capture_file_callback(raw_dir, base_dir):
+    uploaded_file = st.session_state.get("file_input_widget")
+    if uploaded_file is not None:
+        temp_path = os.path.join(base_dir, uploaded_file.name)
+        try:
+            with open(temp_path, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            capture.capture_file(raw_dir, temp_path)
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            st.session_state["file_input_widget"] = None
+            st.session_state["run_pipeline"] = True
+        except Exception as e:
+            st.session_state["capture_error"] = f"Error handling file upload: {e}"
+
+def query_brain_callback(wiki_dir):
+    query = st.session_state.get("query_input_widget", "")
+    if query.strip():
+        import numpy as np # Ensure numpy is imported
+        answer, sources = ask.ask_brain(query, wiki_dir)
+        st.session_state["rag_query"] = query
+        st.session_state["rag_answer"] = answer
+        st.session_state["rag_sources"] = sources
+        st.session_state["query_input_widget"] = ""
+
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
     raw_dir, wiki_dir = capture.setup_directories(base_dir)
+    
+    # Check if pipeline run flag was set in callbacks
+    if st.session_state.get("run_pipeline"):
+        del st.session_state["run_pipeline"]
+        run_post_capture_pipeline(base_dir)
+        
+    if "capture_error" in st.session_state:
+        st.sidebar.error(st.session_state["capture_error"])
+        del st.session_state["capture_error"]
     
     # Title
     st.markdown('<h1 class="main-title">🧠 SecondSelf</h1>', unsafe_allow_html=True)
@@ -232,49 +281,17 @@ def main():
     capture_type = st.sidebar.radio("Input Type", ["Note", "Link / Bookmark", "File Upload"])
     
     if capture_type == "Note":
-        note_content = st.sidebar.text_area("Write down an idea or note", placeholder="E.g., Remind me to look at visual analytics tools for Python next Monday.", height=150, key="note_input_widget")
-        if st.sidebar.button("Capture Note", use_container_width=True):
-            if note_content.strip():
-                note_id = capture.capture_note(raw_dir, note_content)
-                # Clear the text area widget state
-                st.session_state["note_input_widget"] = ""
-                run_post_capture_pipeline(base_dir)
-            else:
-                st.sidebar.warning("Note content cannot be empty!")
+        st.sidebar.text_area("Write down an idea or note", placeholder="E.g., Remind me to look at visual analytics tools for Python next Monday.", height=150, key="note_input_widget")
+        st.sidebar.button("Capture Note", use_container_width=True, on_click=capture_note_callback, args=(raw_dir,))
                 
     elif capture_type == "Link / Bookmark":
-        link_url = st.sidebar.text_input("URL to scrape & capture", placeholder="https://github.com/trending", key="link_input_widget")
-        if st.sidebar.button("Capture Link", use_container_width=True):
-            if link_url.strip():
-                note_id = capture.capture_link(raw_dir, link_url)
-                # Clear the link input widget state
-                st.session_state["link_input_widget"] = ""
-                run_post_capture_pipeline(base_dir)
-            else:
-                st.sidebar.warning("Please provide a valid URL!")
+        st.sidebar.text_input("URL to scrape & capture", placeholder="https://github.com/trending", key="link_input_widget")
+        st.sidebar.button("Capture Link", use_container_width=True, on_click=capture_link_callback, args=(raw_dir,))
                 
     elif capture_type == "File Upload":
         uploaded_file = st.sidebar.file_uploader("Upload note, article, or PDF", type=["txt", "md", "json", "html", "pdf"], key="file_input_widget")
         if uploaded_file is not None:
-            if st.sidebar.button("Capture Uploaded File", use_container_width=True):
-                # Save uploaded file temporarily to project root so we can ingest it
-                temp_path = os.path.join(base_dir, uploaded_file.name)
-                try:
-                    with open(temp_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                    
-                    note_id = capture.capture_file(raw_dir, temp_path)
-                    
-                    # Clean up temp file
-                    if os.path.exists(temp_path):
-                        os.remove(temp_path)
-                        
-                    # Clear the file uploader widget state
-                    st.session_state["file_input_widget"] = None
-                    
-                    run_post_capture_pipeline(base_dir)
-                except Exception as e:
-                    st.sidebar.error(f"Error handling file upload: {e}")
+            st.sidebar.button("Capture Uploaded File", use_container_width=True, on_click=capture_file_callback, args=(raw_dir, base_dir))
                     
     # Display configuration/API check in sidebar footer
     st.sidebar.markdown("---")
@@ -334,20 +351,7 @@ def main():
         
         query = st.text_input("Ask a question about your knowledge base:", placeholder="What did I note down about visual analytics libraries?", key="query_input_widget")
         
-        if st.button("Query Brain", type="primary"):
-            if query.strip():
-                with st.spinner("Retrieving notes and synthesizing answer..."):
-                    import numpy as np # Ensure numpy imported
-                    answer, sources = ask.ask_brain(query, wiki_dir)
-                    # Store results in session state so they persist when input is cleared
-                    st.session_state["rag_query"] = query
-                    st.session_state["rag_answer"] = answer
-                    st.session_state["rag_sources"] = sources
-                    # Clear input widget
-                    st.session_state["query_input_widget"] = ""
-                    st.rerun()
-            else:
-                st.warning("Please enter a question to query!")
+        st.button("Query Brain", type="primary", on_click=query_brain_callback, args=(wiki_dir,))
                 
         # Persistent display of query results
         if "rag_answer" in st.session_state:
