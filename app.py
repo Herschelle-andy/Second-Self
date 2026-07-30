@@ -285,7 +285,7 @@ def main():
         st.sidebar.button("Capture Note", use_container_width=True, on_click=capture_note_callback, args=(raw_dir,))
                 
     elif capture_type == "Link / Bookmark":
-        st.sidebar.text_input("URL to scrape & capture", placeholder="https://github.com/trending", key="link_input_widget")
+        st.sidebar.text_area("URL to scrape & capture", placeholder="https://github.com/trending", height=150, key="link_input_widget")
         st.sidebar.button("Capture Link", use_container_width=True, on_click=capture_link_callback, args=(raw_dir,))
                 
     elif capture_type == "File Upload":
