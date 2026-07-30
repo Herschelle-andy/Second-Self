@@ -351,7 +351,17 @@ def main():
         
         query = st.text_input("Ask a question about your knowledge base:", placeholder="What did I note down about visual analytics libraries?", key="query_input_widget")
         
-        st.button("Query Brain", type="primary", on_click=query_brain_callback, args=(wiki_dir,))
+        # Horizontal columns for query actions (opposite sides of page)
+        col_btn_left, col_btn_mid, col_btn_right = st.columns([1, 4, 1])
+        with col_btn_left:
+            st.button("Query Brain", type="primary", on_click=query_brain_callback, args=(wiki_dir,))
+        with col_btn_right:
+            if "rag_answer" in st.session_state:
+                if st.button("Clear Results", type="primary"):
+                    del st.session_state["rag_query"]
+                    del st.session_state["rag_answer"]
+                    del st.session_state["rag_sources"]
+                    st.rerun()
                 
         # Persistent display of query results
         if "rag_answer" in st.session_state:
@@ -374,12 +384,6 @@ def main():
                         </div>
                         """
                         st.markdown(card_style, unsafe_allow_html=True)
-            
-            if st.button("Clear Results"):
-                del st.session_state["rag_query"]
-                del st.session_state["rag_answer"]
-                del st.session_state["rag_sources"]
-                st.rerun()
                 
     with tab3:
         st.markdown("### Browse Wiki Knowledge Base")
