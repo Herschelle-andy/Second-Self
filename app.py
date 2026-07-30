@@ -292,7 +292,10 @@ def main():
         uploaded_file = st.sidebar.file_uploader("Upload note, article, or PDF", type=["txt", "md", "json", "html", "pdf"], key="file_input_widget")
         if uploaded_file is not None:
             st.sidebar.button("Capture Uploaded File", use_container_width=True, on_click=capture_file_callback, args=(raw_dir, base_dir))
-                    
+    st.sidebar.markdown("### ⚡ Manual Action")
+    if st.sidebar.button("Process New Capture", use_container_width=True):
+        run_post_capture_pipeline(base_dir)
+        
     # Display configuration/API check in sidebar footer
     st.sidebar.markdown("---")
     st.sidebar.markdown("### ⚙️ System Status")
@@ -302,10 +305,6 @@ def main():
     # Load notes for display/stats
     wiki_notes = ask.load_all_notes(wiki_dir)
     st.sidebar.write(f"Total Wiki Notes: **{len(wiki_notes)}**")
-    
-    st.sidebar.markdown("### ⚡ Manual Action")
-    if st.sidebar.button("Process New Capture", use_container_width=True):
-        run_post_capture_pipeline(base_dir)
     
     # ------------------ MAIN SECTION: TABS ------------------
     tab1, tab2, tab3 = st.tabs(["🌐 Living Brain Graph", "🔍 Ask Your Brain (RAG)", "📚 Browse Wiki Notes"])
