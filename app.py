@@ -232,25 +232,29 @@ def main():
     capture_type = st.sidebar.radio("Input Type", ["Note", "Link / Bookmark", "File Upload"])
     
     if capture_type == "Note":
-        note_content = st.sidebar.text_area("Write down an idea or note", placeholder="E.g., Remind me to look at visual analytics tools for Python next Monday.", height=150)
+        note_content = st.sidebar.text_area("Write down an idea or note", placeholder="E.g., Remind me to look at visual analytics tools for Python next Monday.", height=150, key="note_input_widget")
         if st.sidebar.button("Capture Note", use_container_width=True):
             if note_content.strip():
                 note_id = capture.capture_note(raw_dir, note_content)
+                # Clear the text area widget state
+                st.session_state["note_input_widget"] = ""
                 run_post_capture_pipeline(base_dir)
             else:
                 st.sidebar.warning("Note content cannot be empty!")
                 
     elif capture_type == "Link / Bookmark":
-        link_url = st.sidebar.text_input("URL to scrape & capture", placeholder="https://github.com/trending")
+        link_url = st.sidebar.text_input("URL to scrape & capture", placeholder="https://github.com/trending", key="link_input_widget")
         if st.sidebar.button("Capture Link", use_container_width=True):
             if link_url.strip():
                 note_id = capture.capture_link(raw_dir, link_url)
+                # Clear the link input widget state
+                st.session_state["link_input_widget"] = ""
                 run_post_capture_pipeline(base_dir)
             else:
                 st.sidebar.warning("Please provide a valid URL!")
                 
     elif capture_type == "File Upload":
-        uploaded_file = st.sidebar.file_uploader("Upload note, article, or PDF", type=["txt", "md", "json", "html", "pdf"])
+        uploaded_file = st.sidebar.file_uploader("Upload note, article, or PDF", type=["txt", "md", "json", "html", "pdf"], key="file_input_widget")
         if uploaded_file is not None:
             if st.sidebar.button("Capture Uploaded File", use_container_width=True):
                 # Save uploaded file temporarily to project root so we can ingest it
@@ -265,6 +269,9 @@ def main():
                     if os.path.exists(temp_path):
                         os.remove(temp_path)
                         
+                    # Clear the file uploader widget state
+                    st.session_state["file_input_widget"] = None
+                    
                     run_post_capture_pipeline(base_dir)
                 except Exception as e:
                     st.sidebar.error(f"Error handling file upload: {e}")
