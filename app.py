@@ -332,32 +332,50 @@ def main():
         st.markdown("### Ask your SecondSelf anything")
         st.caption("Natural language search synthesizing answers exclusively from your captured documents.")
         
-        query = st.text_input("Ask a question about your knowledge base:", placeholder="What did I note down about visual analytics libraries?")
+        query = st.text_input("Ask a question about your knowledge base:", placeholder="What did I note down about visual analytics libraries?", key="query_input_widget")
         
         if st.button("Query Brain", type="primary"):
             if query.strip():
                 with st.spinner("Retrieving notes and synthesizing answer..."):
                     import numpy as np # Ensure numpy imported
                     answer, sources = ask.ask_brain(query, wiki_dir)
-                    
-                    st.markdown("#### Response:")
-                    st.write(answer)
-                    
-                    if sources:
-                        st.markdown("#### Retrieved Sources:")
-                        cols = st.columns(len(sources))
-                        for idx, src in enumerate(sources):
-                            with cols[idx]:
-                                card_style = f"""
-                                <div style="border:1px solid #ddd; padding: 12px; border-radius: 8px; background-color: #fcfcfc;">
-                                    <h5 style="margin:0; color:#2c3e50;">{src['title']}</h5>
-                                    <span style="font-size: 10px; color:#1e90ff; font-weight:bold;">{src['category']}</span><br/>
-                                    <span style="font-size: 11px; color:#555;">Relevancy: {src['score']:.2f}</span>
-                                </div>
-                                """
-                                st.markdown(card_style, unsafe_allow_html=True)
+                    # Store results in session state so they persist when input is cleared
+                    st.session_state["rag_query"] = query
+                    st.session_state["rag_answer"] = answer
+                    st.session_state["rag_sources"] = sources
+                    # Clear input widget
+                    st.session_state["query_input_widget"] = ""
+                    st.rerun()
             else:
                 st.warning("Please enter a question to query!")
+                
+        # Persistent display of query results
+        if "rag_answer" in st.session_state:
+            st.markdown("---")
+            st.markdown(f"❓ **Question:** *{st.session_state['rag_query']}*")
+            st.markdown("#### Response:")
+            st.write(st.session_state["rag_answer"])
+            
+            sources = st.session_state.get("rag_sources", [])
+            if sources:
+                st.markdown("#### Retrieved Sources:")
+                cols = st.columns(len(sources))
+                for idx, src in enumerate(sources):
+                    with cols[idx]:
+                        card_style = f"""
+                        <div style="border:1px solid #ddd; padding: 12px; border-radius: 8px; background-color: #fcfcfc;">
+                            <h5 style="margin:0; color:#2c3e50;">{src['title']}</h5>
+                            <span style="font-size: 10px; color:#1e90ff; font-weight:bold;">{src['category']}</span><br/>
+                            <span style="font-size: 11px; color:#555;">Relevancy: {src['score']:.2f}</span>
+                        </div>
+                        """
+                        st.markdown(card_style, unsafe_allow_html=True)
+            
+            if st.button("Clear Results"):
+                del st.session_state["rag_query"]
+                del st.session_state["rag_answer"]
+                del st.session_state["rag_sources"]
+                st.rerun()
                 
     with tab3:
         st.markdown("### Browse Wiki Knowledge Base")
