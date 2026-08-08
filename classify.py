@@ -217,6 +217,7 @@ def process_raw_captures(base_dir):
             "id": note_id,
             "title": title,
             "captured_at": timestamp,
+            "source": "app_capture",
             "category": category,
             "tags": tags,
             "summary": summary,

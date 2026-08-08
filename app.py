@@ -80,8 +80,15 @@ def run_post_capture_pipeline(base_dir):
             output_json = os.path.join(base_dir, 'graph.json')
             build_graph.build_graph_data(wiki_dir, output_json)
             
+            status.write("Syncing knowledge base to GitHub repository...")
+            from lib.utils import sync_to_github
+            sync_ok, sync_msg = sync_to_github(base_dir)
+            
             status.update(label="Second Brain updated successfully!", state="complete", expanded=False)
-            st.session_state["capture_success"] = "Successfully captured, classified, and linked your new note!"
+            if sync_ok:
+                st.session_state["capture_success"] = "Successfully captured, classified, and synced to GitHub!"
+            else:
+                st.session_state["capture_success"] = "Successfully captured, classified, and linked your new note!"
             st.rerun()
         except Exception as e:
             status.update(label=f"Pipeline error: {e}", state="error")
@@ -307,7 +314,7 @@ def main():
     st.sidebar.write(f"Total Wiki Notes: **{len(wiki_notes)}**")
     
     # ------------------ MAIN SECTION: TABS ------------------
-    tab1, tab2, tab3 = st.tabs(["🌐 Living Brain Graph", "🔍 Ask Your Brain (RAG)", "📚 Browse Wiki Notes"])
+    tab1, tab2, tab3, tab4 = st.tabs(["🌐 Living Brain Graph", "🔍 Ask Your Brain (RAG)", "📚 Browse Wiki Notes", "🗑️ Manage & Delete Notes"])
     
     with tab1:
         st.markdown("### Interactive Knowledge Graph")
@@ -406,6 +413,102 @@ def main():
                         st.markdown(f"**Summary**: *{note.get('summary', 'No summary available.')}*")
                         st.markdown("---")
                         st.markdown(note["body"])
+                        
+    with tab4:
+        st.markdown("### 🗑️ Manage & Delete Notes")
+        st.caption("Select notes to review their details or permanently delete them from your knowledge base and GitHub repository.")
+        
+        if "delete_success" in st.session_state:
+            st.success(st.session_state["delete_success"])
+            del st.session_state["delete_success"]
+            
+        if not wiki_notes:
+            st.info("Your knowledge base is empty. There are no notes to manage.")
+        else:
+            col_filter_src, col_filter_cat = st.columns(2)
+            with col_filter_src:
+                src_filter = st.selectbox(
+                    "Filter by Origin", 
+                    ["All Notes", "App Captures Only (⭐ Newly Captured)", "Pre-existing / Seed Notes"]
+                )
+            with col_filter_cat:
+                cat_filter = st.selectbox("Filter by PARA Category", ["All", "Projects", "Areas", "Resources", "Archives"], key="del_cat_filter")
+                
+            # Filter notes
+            manage_notes = []
+            for n in wiki_notes:
+                is_app = n.get("source") == "app_capture"
+                if src_filter == "App Captures Only (⭐ Newly Captured)" and not is_app:
+                    continue
+                if src_filter == "Pre-existing / Seed Notes" and is_app:
+                    continue
+                if cat_filter != "All" and n["category"] != cat_filter:
+                    continue
+                manage_notes.append(n)
+                
+            if not manage_notes:
+                st.info("No notes match the selected filters.")
+            else:
+                # Helper function to format timestamp
+                def format_timestamp(note):
+                    raw_time = note.get("captured_at", "")
+                    if raw_time:
+                        try:
+                            return raw_time.replace("T", " ").split(".")[0]
+                        except Exception:
+                            return raw_time[:19]
+                    try:
+                        import datetime
+                        mtime = os.path.getmtime(note["path"])
+                        return datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        return "Unknown Date"
+                        
+                # Create menu labels
+                note_options = {}
+                for n in manage_notes:
+                    time_str = format_timestamp(n)
+                    origin_tag = "⭐ App Capture" if n.get("source") == "app_capture" else "📁 Seed Note"
+                    label = f"[{time_str}] {n['title']} ({n['category']}) — {origin_tag}"
+                    note_options[label] = n
+                    
+                selected_label = st.selectbox(
+                    "Select a note from the menu to inspect or delete:",
+                    list(note_options.keys())
+                )
+                
+                selected_note = note_options[selected_label]
+                time_str = format_timestamp(selected_note)
+                origin_badge = "🟢 New App Capture" if selected_note.get("source") == "app_capture" else "⚪ Pre-existing"
+                
+                st.markdown(f"""
+                <div style="border: 1px solid #e0e0e0; border-radius: 10px; padding: 18px; background-color: #fafafa; margin-top: 10px; margin-bottom: 15px;">
+                    <h4 style="margin-top: 0; color: #1e293b;">{selected_note['title']}</h4>
+                    <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">
+                        <b>Category:</b> {selected_note['category']} &nbsp;|&nbsp; 
+                        <b>Captured Date & Time:</b> <code>{time_str}</code> &nbsp;|&nbsp;
+                        <b>Origin:</b> {origin_badge}
+                    </p>
+                    <p style="font-size: 13px; color: #475569;"><b>Summary:</b> {selected_note.get('summary', 'No summary available.')}</p>
+                    <p style="font-size: 12px; color: #94a3b8;"><b>File Path:</b> <code>{selected_note['path']}</code></p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                with st.expander("📄 View Full Markdown Content"):
+                    st.markdown(selected_note["body"])
+                    
+                col_del_btn, col_del_space = st.columns([2, 4])
+                with col_del_btn:
+                    if st.button(f"🗑️ Delete Note", type="primary", use_container_width=True):
+                        from lib.utils import delete_note
+                        with st.spinner("Deleting note, rebuilding graph, and syncing repository..."):
+                            ok, msg = delete_note(base_dir, selected_note["id"])
+                            if ok:
+                                st.session_state["delete_success"] = f"✅ Successfully deleted note: **{selected_note['title']}**."
+                                st.rerun()
+                            else:
+                                st.error(f"Error deleting note: {msg}")
 
 if __name__ == "__main__":
     main()
+

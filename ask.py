@@ -40,9 +40,13 @@ def load_all_notes(wiki_dir):
                     if frontmatter:
                         notes.append({
                             "id": frontmatter.get("id"),
-                            "title": frontmatter.get("title", ""),
+                            "title": frontmatter.get("title", "Untitled Note"),
                             "summary": frontmatter.get("summary", ""),
                             "category": frontmatter.get("category", ""),
+                            "captured_at": frontmatter.get("captured_at", ""),
+                            "source": frontmatter.get("source", "pre_existing"),
+                            "tags": frontmatter.get("tags", []),
+                            "links": frontmatter.get("links", []),
                             "body": body.strip(),
                             "path": file_path
                         })

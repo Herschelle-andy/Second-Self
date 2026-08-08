@@ -61,3 +61,96 @@ def load_env(base_dir):
         except Exception as e:
             print(f"Warning: Failed to load .env file: {e}", file=sys.stderr)
 
+def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via app"):
+    """Auto-commit and push wiki changes to GitHub repository."""
+    import subprocess
+    try:
+        gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        if gh_token:
+            repo_url = f"https://{gh_token}@github.com/Herschelle-andy/Second-Self.git"
+            subprocess.run(["git", "remote", "set-url", "origin", repo_url], cwd=base_dir, capture_output=True)
+            
+        subprocess.run(["git", "add", "wiki/"], cwd=base_dir, capture_output=True)
+        
+        commit_res = subprocess.run(
+            ["git", "commit", "-m", commit_message], 
+            cwd=base_dir, 
+            capture_output=True, 
+            text=True
+        )
+        
+        push_res = subprocess.run(
+            ["git", "push", "origin", "main"], 
+            cwd=base_dir, 
+            capture_output=True, 
+            text=True
+        )
+        
+        if push_res.returncode == 0:
+            return True, "Synced to GitHub successfully."
+        else:
+            return False, f"Git push notice: {push_res.stderr or push_res.stdout}"
+    except Exception as e:
+        return False, str(e)
+
+def delete_note(base_dir, note_id):
+    """Delete a note from wiki directory and remove its links across all other notes."""
+    wiki_dir = os.path.join(base_dir, 'wiki')
+    categories = ['Projects', 'Areas', 'Resources', 'Archives']
+    deleted = False
+    
+    # 1. Find and remove the note file
+    for cat in categories:
+        target_file = os.path.join(wiki_dir, cat, f"{note_id}.md")
+        if os.path.exists(target_file):
+            try:
+                os.remove(target_file)
+                deleted = True
+                break
+            except Exception as e:
+                return False, f"Failed to delete file: {e}"
+                
+    if not deleted:
+        return False, f"Note {note_id} not found."
+        
+    # 2. Clean up bidirectional links in other notes
+    for root, dirs, files in os.walk(wiki_dir):
+        for file in files:
+            if file.endswith('.md'):
+                fpath = os.path.join(root, file)
+                try:
+                    fm, body = load_yaml_frontmatter(fpath)
+                    if fm and "links" in fm and isinstance(fm["links"], list):
+                        if note_id in fm["links"]:
+                            fm["links"] = [link for link in fm["links"] if link != note_id]
+                            save_yaml_frontmatter(fpath, fm, body)
+                except Exception as e:
+                    print(f"Error updating links in {fpath}: {e}")
+                    
+    # 3. Clean from embeddings cache if present
+    cache_path = os.path.join(base_dir, 'embeddings.pkl')
+    if os.path.exists(cache_path):
+        try:
+            import pickle
+            with open(cache_path, 'rb') as f:
+                emb_cache = pickle.load(f)
+            if note_id in emb_cache:
+                del emb_cache[note_id]
+                with open(cache_path, 'wb') as f:
+                    pickle.dump(emb_cache, f)
+        except Exception as e:
+            print(f"Warning: Failed to update embeddings cache: {e}")
+            
+    # 4. Rebuild graph.json
+    graph_path = os.path.join(base_dir, 'graph.json')
+    try:
+        import build_graph
+        build_graph.build_graph_data(wiki_dir, graph_path)
+    except Exception as e:
+        print(f"Warning: Failed to rebuild graph after deletion: {e}")
+        
+    # 5. Sync deletion to GitHub
+    sync_to_github(base_dir, commit_message=f"Delete note {note_id} via SecondSelf app")
+    
+    return True, f"Successfully deleted note {note_id}."
+
