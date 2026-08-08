@@ -326,14 +326,12 @@ def main():
                 with open(graph_path, 'r', encoding='utf-8') as f:
                     graph_data = json.load(f)
                 
-                # Write HTML to static folder to serve via iframe (avoids deprecation warnings)
+                # Render interactive vis-network graph HTML
                 graph_html = get_graph_html(graph_data)
-                static_dir = os.path.join(base_dir, 'static')
-                os.makedirs(static_dir, exist_ok=True)
-                with open(os.path.join(static_dir, 'graph_viewer.html'), 'w', encoding='utf-8') as sf:
-                    sf.write(graph_html)
-                
-                st.iframe(src="static/graph_viewer.html", height=580)
+                if hasattr(st, "iframe"):
+                    st.iframe(graph_html, height=580)
+                else:
+                    components.html(graph_html, height=580)
                 
                 # Legend
                 col1, col2, col3, col4 = st.columns(4)
