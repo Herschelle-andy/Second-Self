@@ -560,27 +560,60 @@ def main():
     # ------------------ TAB 3: BROWSE WIKI ------------------
     with tab3:
         st.markdown("### Browse Wiki Knowledge Base")
-        if not wiki_notes:
-            st.info("Knowledge base is empty. Capture notes to populate.")
+        
+        # Check if Browse Vault is unlocked in session_state
+        if not st.session_state.get("browse_vault_unlocked", False):
+            st.markdown("""
+            <div class="cyber-card" style="border-left: 4px solid #00f2fe; margin-top: 15px; margin-bottom: 20px;">
+                <h4 style="margin-top: 0; color: #00f2fe; font-family: 'Rajdhani', sans-serif;">🔒 Vault Access Locked</h4>
+                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 0;">This section contains personal knowledge base notes. Please enter your Admin Passcode to authenticate and browse your notes.</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            col_auth_in, col_auth_btn = st.columns([3, 1])
+            with col_auth_in:
+                auth_pin = st.text_input("Enter Admin Passcode to Unlock Vault:", type="password", placeholder="Enter passcode (Default: 1234)", key="browse_vault_pin_input")
+            with col_auth_btn:
+                st.write("") # spacing
+                st.write("")
+                if st.button("🔓 Unlock Vault", type="primary", use_container_width=True):
+                    expected_pin = get_secret("ADMIN_PIN", "1234")
+                    if auth_pin.strip() == expected_pin:
+                        st.session_state["browse_vault_unlocked"] = True
+                        st.rerun()
+                    else:
+                        st.error("❌ Authentication Failed: Invalid Admin Passcode.")
         else:
-            categories = ['Projects', 'Areas', 'Resources', 'Archives']
-            selected_cat = st.selectbox("Filter Category", ["All"] + categories)
-            
-            filtered_notes = [
-                n for n in wiki_notes 
-                if selected_cat == "All" or n["category"] == selected_cat
-            ]
-            
-            if not filtered_notes:
-                st.write("No notes found in this category.")
+            # Vault is unlocked!
+            col_browse_hdr, col_lock_btn = st.columns([4, 1])
+            with col_browse_hdr:
+                st.caption("🔓 Vault Unlocked — You have active access to browse your personal knowledge base notes.")
+            with col_lock_btn:
+                if st.button("🔒 Lock Vault", use_container_width=True):
+                    st.session_state["browse_vault_unlocked"] = False
+                    st.rerun()
+                    
+            if not wiki_notes:
+                st.info("Knowledge base is empty. Capture notes to populate.")
             else:
-                for note in filtered_notes:
-                    with st.expander(f"📁 {note['category']} | {note['title']}"):
-                        st.markdown(f"**Captured At**: `{note.get('captured_at', 'Unknown')}`")
-                        st.markdown(f"**Tags**: `{' '.join([f'#{t}' for t in note.get('tags', [])])}`")
-                        st.markdown(f"**Summary**: *{note.get('summary', 'No summary available.')}*")
-                        st.markdown("---")
-                        st.markdown(note["body"])
+                categories = ['Projects', 'Areas', 'Resources', 'Archives']
+                selected_cat = st.selectbox("Filter Category", ["All"] + categories)
+                
+                filtered_notes = [
+                    n for n in wiki_notes 
+                    if selected_cat == "All" or n["category"] == selected_cat
+                ]
+                
+                if not filtered_notes:
+                    st.write("No notes found in this category.")
+                else:
+                    for note in filtered_notes:
+                        with st.expander(f"📁 {note['category']} | {note['title']}"):
+                            st.markdown(f"**Captured At**: `{note.get('captured_at', 'Unknown')}`")
+                            st.markdown(f"**Tags**: `{' '.join([f'#{t}' for t in note.get('tags', [])])}`")
+                            st.markdown(f"**Summary**: *{note.get('summary', 'No summary available.')}*")
+                            st.markdown("---")
+                            st.markdown(note["body"])
                         
     # ------------------ TAB 4: MANAGE & DELETE ------------------
     with tab4:
