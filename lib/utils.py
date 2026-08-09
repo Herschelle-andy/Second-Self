@@ -93,8 +93,8 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
         # 3. Pull latest remote changes
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=base_dir, capture_output=True)
             
-        # 4. Stage wiki notes and graph metadata
-        subprocess.run(["git", "add", "wiki/"], cwd=base_dir, capture_output=True)
+        # 4. Stage wiki notes (including deletions)
+        subprocess.run(["git", "add", "-A", "wiki/"], cwd=base_dir, capture_output=True)
         
         # 5. Commit
         commit_res = subprocess.run(
