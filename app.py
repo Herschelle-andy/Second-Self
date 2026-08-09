@@ -679,6 +679,14 @@ def main():
                 time_str = format_timestamp(selected_note)
                 origin_badge = "🟢 New App Capture" if selected_note.get("source") == "app_capture" else "⚪ Pre-existing"
                 
+                is_manage_unlocked = st.session_state.get("manage_details_unlocked", False) or st.session_state.get("browse_vault_unlocked", False)
+                
+                # Determine display for Summary and Markdown Body
+                if is_manage_unlocked:
+                    summary_display = selected_note.get('summary', 'No summary available.')
+                else:
+                    summary_display = "🔒 *[Private Summary — Enter Admin Passcode below to view]*"
+                    
                 st.markdown(f"""
                 <div class="cyber-card" style="border-left: 4px solid #f72585;">
                     <h4 style="margin-top: 0; color: #ffffff; font-family: 'Rajdhani', sans-serif;">{selected_note['title']}</h4>
@@ -687,34 +695,64 @@ def main():
                         <b>Captured Date & Time:</b> <code>{time_str}</code> &nbsp;|&nbsp;
                         <b>Origin:</b> {origin_badge}
                     </p>
-                    <p style="font-size: 13px; color: #cbd5e1;"><b>Summary:</b> {selected_note.get('summary', 'No summary available.')}</p>
+                    <p style="font-size: 13px; color: #cbd5e1;"><b>Summary:</b> {summary_display}</p>
                     <p style="font-size: 11px; color: #64748b;"><b>File Path:</b> <code>{selected_note['path']}</code></p>
                 </div>
                 """, unsafe_allow_html=True)
                 
                 with st.expander("📄 View Full Markdown Content"):
-                    st.markdown(selected_note["body"])
-                    
+                    if is_manage_unlocked:
+                        st.markdown(selected_note["body"])
+                    else:
+                        st.info("🔒 **Protected Content:** Full markdown content is locked. Enter Admin Passcode below to decrypt.")
+                        
                 is_app_capture = selected_note.get("source") == "app_capture"
                 
-                if not is_app_capture:
-                    st.info("🔒 **Protected Seed Note:** Pre-existing knowledge base notes are permanent and cannot be modified or deleted.")
-                else:
-                    st.markdown("#### 🔐 Authorization Required")
+                if not is_manage_unlocked:
+                    st.markdown("#### 🔐 Passcode Authorization Required")
                     admin_pin = st.text_input(
-                        "Enter Admin Passcode to authorize deletion:", 
+                        "Enter Admin Passcode to unlock summary, markdown content, and actions:", 
                         type="password", 
                         placeholder="Enter passcode (Default: 1234)", 
-                        key=f"del_pin_{selected_note['id']}"
+                        key=f"manage_pin_{selected_note['id']}"
                     )
                     
-                    col_del_btn, col_del_space = st.columns([2, 4])
-                    with col_del_btn:
-                        if st.button("🗑️ Delete Note", type="primary", use_container_width=True):
+                    col_unlock_btn, col_del_unauth = st.columns([2, 2])
+                    with col_unlock_btn:
+                        if st.button("🔓 Unlock Details", type="primary", use_container_width=True):
                             expected_pin = get_secret("ADMIN_PIN", "1234")
-                            if admin_pin.strip() != expected_pin:
-                                st.error("❌ Authentication Failed: Invalid Admin Passcode. Note was not deleted.")
+                            if admin_pin.strip() == expected_pin:
+                                st.session_state["manage_details_unlocked"] = True
+                                st.rerun()
                             else:
+                                st.error("❌ Authentication Failed: Invalid Admin Passcode.")
+                    with col_del_unauth:
+                        if is_app_capture:
+                            if st.button("🗑️ Delete Note", use_container_width=True):
+                                expected_pin = get_secret("ADMIN_PIN", "1234")
+                                if admin_pin.strip() != expected_pin:
+                                    st.error("❌ Authentication Failed: Invalid Admin Passcode. Note was not deleted.")
+                                else:
+                                    with st.spinner("Deleting note, rebuilding graph, and syncing repository..."):
+                                        ok, msg = delete_note(base_dir, selected_note["id"])
+                                        if ok:
+                                            st.session_state["delete_success"] = f"✅ Successfully deleted note: **{selected_note['title']}**."
+                                            st.rerun()
+                                        else:
+                                            st.error(f"Error deleting note: {msg}")
+                        else:
+                            st.caption("🔒 *Seed notes are protected against deletion.*")
+                else:
+                    # Unlocked view
+                    col_lock_action, col_delete_action = st.columns([2, 2])
+                    with col_lock_action:
+                        if st.button("🔒 Lock Private Details", use_container_width=True):
+                            st.session_state["manage_details_unlocked"] = False
+                            st.session_state["browse_vault_unlocked"] = False
+                            st.rerun()
+                    with col_delete_action:
+                        if is_app_capture:
+                            if st.button("🗑️ Delete Note", type="primary", use_container_width=True):
                                 with st.spinner("Deleting note, rebuilding graph, and syncing repository..."):
                                     ok, msg = delete_note(base_dir, selected_note["id"])
                                     if ok:
@@ -722,6 +760,8 @@ def main():
                                         st.rerun()
                                     else:
                                         st.error(f"Error deleting note: {msg}")
+                        else:
+                            st.caption("🔒 *Protected Seed Note: Pre-existing notes cannot be deleted.*")
 
 if __name__ == "__main__":
     main()
