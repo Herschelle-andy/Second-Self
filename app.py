@@ -5,7 +5,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # Load local environment files
-from lib.utils import load_env, sync_to_github, delete_note
+from lib.utils import load_env, sync_to_github, delete_note, get_secret
 load_env(os.path.dirname(os.path.abspath(__file__)))
 
 # Import our local pipeline functions
@@ -199,9 +199,9 @@ def run_post_capture_pipeline(base_dir):
             
             status.update(label="Second Brain updated successfully!", state="complete", expanded=False)
             if sync_ok:
-                st.session_state["capture_success"] = "Successfully captured, classified, and synced to GitHub!"
+                st.session_state["capture_success"] = "✅ Successfully captured, classified, and synced to GitHub!"
             else:
-                st.session_state["capture_success"] = "Successfully captured, classified, and linked your new note!"
+                st.session_state["capture_success"] = f"✅ Note captured locally. (Sync Notice: {sync_msg})"
             st.rerun()
         except Exception as e:
             status.update(label=f"Pipeline error: {e}", state="error")
@@ -456,8 +456,14 @@ def main():
     # Display configuration/API check in sidebar footer
     st.sidebar.markdown("---")
     st.sidebar.markdown("### ⚙️ System Status")
-    groq_api_status = "✅ Set" if os.environ.get("GROQ_API_KEY") else "❌ Missing (Set GROQ_API_KEY environment var)"
+    groq_api_status = "✅ Set" if get_secret("GROQ_API_KEY") else "❌ Missing (Set GROQ_API_KEY)"
     st.sidebar.write(f"Groq API: {groq_api_status}")
+    
+    gh_token = get_secret("GITHUB_TOKEN") or get_secret("GH_TOKEN")
+    gh_status = "✅ Active" if gh_token else "⚠️ Missing GITHUB_TOKEN"
+    st.sidebar.write(f"Cloud Auto-Sync: {gh_status}")
+    if not gh_token:
+        st.sidebar.caption("⚠️ *Add `GITHUB_TOKEN` to Streamlit Cloud Secrets so captures persist permanently across cloud reboots.*")
     
     # Load notes for display/stats
     wiki_notes = ask.load_all_notes(wiki_dir)

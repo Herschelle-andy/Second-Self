@@ -37,9 +37,21 @@ def save_yaml_frontmatter(file_path, frontmatter, body):
         print(f"Error writing YAML frontmatter to {file_path}: {e}", file=sys.stderr)
     return False
 
+def get_secret(key_name, default=None):
+    """Retrieve secret safely from environment variables or Streamlit secrets."""
+    if key_name in os.environ and os.environ[key_name]:
+        return os.environ[key_name]
+    try:
+        import streamlit as st
+        if hasattr(st, "secrets") and key_name in st.secrets:
+            return st.secrets[key_name]
+    except Exception:
+        pass
+    return default
+
 def get_env_key(key_name, default=None):
     """Retrieve environment variable key safely."""
-    return os.environ.get(key_name, default)
+    return get_secret(key_name, default)
 
 def load_env(base_dir):
     """Load environment variables from a local .env file in the base directory."""
@@ -65,13 +77,26 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
     """Auto-commit and push wiki changes to GitHub repository."""
     import subprocess
     try:
-        gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+        gh_token = get_secret("GITHUB_TOKEN") or get_secret("GH_TOKEN")
+        
+        # 1. Ensure git user identity is configured (essential in fresh cloud containers)
+        subprocess.run(["git", "config", "user.email", "secondself-app@users.noreply.github.com"], cwd=base_dir, capture_output=True)
+        subprocess.run(["git", "config", "user.name", "SecondSelf Cloud App"], cwd=base_dir, capture_output=True)
+        
+        # 2. Configure remote URL with token if token is provided
         if gh_token:
             repo_url = f"https://{gh_token}@github.com/Herschelle-andy/Second-Self.git"
             subprocess.run(["git", "remote", "set-url", "origin", repo_url], cwd=base_dir, capture_output=True)
+        else:
+            return False, "GITHUB_TOKEN not configured. Please add GITHUB_TOKEN to Streamlit Cloud Secrets / .env to persist cloud captures."
             
+        # 3. Pull latest remote changes
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=base_dir, capture_output=True)
+            
+        # 4. Stage wiki notes and graph metadata
         subprocess.run(["git", "add", "wiki/"], cwd=base_dir, capture_output=True)
         
+        # 5. Commit
         commit_res = subprocess.run(
             ["git", "commit", "-m", commit_message], 
             cwd=base_dir, 
@@ -79,6 +104,7 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
             text=True
         )
         
+        # 6. Push to GitHub main branch
         push_res = subprocess.run(
             ["git", "push", "origin", "main"], 
             cwd=base_dir, 
@@ -89,7 +115,8 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
         if push_res.returncode == 0:
             return True, "Synced to GitHub successfully."
         else:
-            return False, f"Git push notice: {push_res.stderr or push_res.stdout}"
+            err_msg = (push_res.stderr or push_res.stdout or "").strip()
+            return False, f"Git push failed: {err_msg}"
     except Exception as e:
         return False, str(e)
 
