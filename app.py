@@ -678,7 +678,7 @@ def main():
                     col_del_btn, col_del_space = st.columns([2, 4])
                     with col_del_btn:
                         if st.button("🗑️ Delete Note", type="primary", use_container_width=True):
-                            expected_pin = os.environ.get("ADMIN_PIN", "1234")
+                            expected_pin = get_secret("ADMIN_PIN", "1234")
                             if admin_pin.strip() != expected_pin:
                                 st.error("❌ Authentication Failed: Invalid Admin Passcode. Note was not deleted.")
                             else:

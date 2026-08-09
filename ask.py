@@ -38,13 +38,16 @@ def load_all_notes(wiki_dir):
                 try:
                     frontmatter, body = load_yaml_frontmatter(file_path)
                     if frontmatter:
+                        note_id = frontmatter.get("id") or os.path.splitext(file)[0]
+                        from lib.utils import is_seed_note
+                        is_seed = is_seed_note(note_id)
                         notes.append({
-                            "id": frontmatter.get("id"),
+                            "id": note_id,
                             "title": frontmatter.get("title", "Untitled Note"),
                             "summary": frontmatter.get("summary", ""),
                             "category": frontmatter.get("category", ""),
                             "captured_at": frontmatter.get("captured_at", ""),
-                            "source": frontmatter.get("source", "pre_existing"),
+                            "source": "seed" if is_seed else "app_capture",
                             "tags": frontmatter.get("tags", []),
                             "links": frontmatter.get("links", []),
                             "body": body.strip(),

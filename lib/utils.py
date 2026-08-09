@@ -118,8 +118,26 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
     except Exception as e:
         return False, str(e)
 
+SEED_NOTE_IDS = {
+    "note_1785191135594", "note_1785191952195", "note_1785013413357", "note_1785013415343",
+    "note_1785013415954", "file_1785013421791", "link_1785013418405", "link_1785013420151",
+    "link_1785016323800", "note_1785013413978", "note_1785013417159", "note_1785013417755",
+    "note_1785093621699", "note_1785190531235", "file_1785063051729", "link_1785223865882",
+    "note_1785013354824", "note_1785013412694", "note_1785013414670", "note_1785013416551",
+    "note_1785015944623", "note_1785016023457", "note_1785016144401", "note_1785090003395",
+    "note_1785094191091", "note_1785094285894", "note_1785360546878"
+}
+
+def is_seed_note(note_id):
+    """Check if note belongs to the original 27 protected seed notes."""
+    return note_id in SEED_NOTE_IDS
+
 def delete_note(base_dir, note_id):
     """Delete an app-captured note from wiki directory and remove its links across all other notes."""
+    # Check if note is protected (seed / pre-existing)
+    if is_seed_note(note_id):
+        return False, "Protected Note: Seed and pre-existing knowledge base notes cannot be deleted."
+
     wiki_dir = os.path.join(base_dir, 'wiki')
     categories = ['Projects', 'Areas', 'Resources', 'Archives']
     target_file = None
@@ -133,11 +151,6 @@ def delete_note(base_dir, note_id):
             
     if not target_file:
         return False, f"Note {note_id} not found."
-        
-    # Check if note is protected (seed / pre-existing)
-    fm, body = load_yaml_frontmatter(target_file)
-    if not fm or fm.get("source") != "app_capture":
-        return False, "Protected Note: Seed and pre-existing knowledge base notes cannot be deleted."
         
     # Remove file from wiki
     try:
