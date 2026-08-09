@@ -90,13 +90,8 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
         else:
             return False, "GITHUB_TOKEN not configured. Please add GITHUB_TOKEN to Streamlit Cloud Secrets / .env to persist cloud captures."
             
-        # 3. Pull latest remote changes
-        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=base_dir, capture_output=True)
-            
-        # 4. Stage wiki notes (including deletions)
+        # 3. Stage wiki notes (including deletions) and commit FIRST
         subprocess.run(["git", "add", "-A", "wiki/"], cwd=base_dir, capture_output=True)
-        
-        # 5. Commit
         commit_res = subprocess.run(
             ["git", "commit", "-m", commit_message], 
             cwd=base_dir, 
@@ -104,7 +99,10 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
             text=True
         )
         
-        # 6. Push to GitHub main branch
+        # 4. Pull and rebase remote changes with local commits preserved
+        subprocess.run(["git", "pull", "--rebase", "origin", "main"], cwd=base_dir, capture_output=True)
+        
+        # 5. Push to GitHub main branch
         push_res = subprocess.run(
             ["git", "push", "origin", "main"], 
             cwd=base_dir, 
