@@ -245,6 +245,13 @@ def process_raw_captures(base_dir):
                 f.write(markdown_content)
             print(f"Saved note to wiki: wiki/{category}/{note_id}.md")
             classified_count += 1
+            
+            # Clean up the raw JSON capture file so it is never re-processed
+            if os.path.exists(json_path):
+                try:
+                    os.remove(json_path)
+                except Exception as e:
+                    print(f"Warning: Could not remove raw JSON file {json_path}: {e}")
         except Exception as e:
             print(f"Error saving classified note {note_id}: {e}")
             

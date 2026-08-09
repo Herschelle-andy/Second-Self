@@ -139,11 +139,21 @@ def delete_note(base_dir, note_id):
     if not fm or fm.get("source") != "app_capture":
         return False, "Protected Note: Seed and pre-existing knowledge base notes cannot be deleted."
         
-    # Remove file
+    # Remove file from wiki
     try:
         os.remove(target_file)
     except Exception as e:
         return False, f"Failed to delete file: {e}"
+        
+    # Also clean up any lingering raw staging files for this note
+    raw_dir = os.path.join(base_dir, 'raw')
+    if os.path.exists(raw_dir):
+        for rf in os.listdir(raw_dir):
+            if rf.startswith(note_id):
+                try:
+                    os.remove(os.path.join(raw_dir, rf))
+                except Exception:
+                    pass
         
     # 2. Clean up bidirectional links in other notes
     for root, dirs, files in os.walk(wiki_dir):
