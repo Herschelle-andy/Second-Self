@@ -2,6 +2,7 @@
 
 SecondSelf is a personal knowledge management system designed to make note-taking, link bookmarking, and document indexing actionable. Rather than letting notes sit in unorganized folders, SecondSelf uses LLMs to automatically classify and structure inputs, applies embeddings to discover similarity connections, renders an interactive force-directed graph to visualize your mind, and enables retrieval-augmented Q&A (RAG) over your notes.
 
+## Link:- https://ankit-gen-ai-second-self.streamlit.app/
 ---
 
 ## Features
