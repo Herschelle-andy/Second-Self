@@ -237,32 +237,23 @@ def get_graph_html(graph_data):
     for node in graph_data.get("nodes", []):
         cat = node.get("category", "Resources")
         colors = color_map.get(cat, color_map["Resources"])
+        node_size = 26 if cat == "Projects" else (22 if cat == "Areas" else 18)
         
-        tooltip = f"""
-        <div style="font-family: 'Rajdhani', Arial, sans-serif; padding: 14px; width: 280px; background: rgba(7, 12, 24, 0.95); border: 1px solid #00f2fe; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 242, 254, 0.4); color: #e2e8f0;">
-            <b style="font-size: 16px; color: #ffffff; letter-spacing: 0.5px;">{node['label']}</b><br/>
-            <span style="display: inline-block; background: rgba(0, 242, 254, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 2px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; margin-top: 6px; margin-bottom: 8px;">
-                {cat}
-            </span><br/>
-            <p style="font-size: 12px; margin: 0; color: #94a3b8; line-height: 1.4;">{node.get('summary', 'No summary available.')}</p>
-            <div style="margin-top: 8px;">
-                {' '.join([f'<span style="background: rgba(255, 255, 255, 0.08); border-radius: 3px; font-size: 10px; padding: 2px 6px; color: #a5f3fc; margin-right: 4px;">#{t}</span>' for t in node.get('tags', [])])}
-            </div>
-        </div>
-        """
-        
-        node_size = 28 if cat == "Projects" else (24 if cat == "Areas" else 18)
         formatted_nodes.append({
             "id": node["id"],
             "label": node["label"],
-            "title": tooltip,
             "color": colors,
             "shape": "dot",
             "size": node_size,
+            "rawTitle": node["label"],
+            "rawCategory": cat,
+            "rawSummary": node.get("summary", "No summary available."),
+            "rawTags": node.get("tags", []),
+            "rawColor": colors["background"],
             "shadow": {
                 "enabled": True,
                 "color": colors["border"],
-                "size": 12,
+                "size": 10,
                 "x": 0,
                 "y": 0
             }
@@ -293,47 +284,126 @@ def get_graph_html(graph_data):
     <html>
     <head>
         <title>SecondSelf Graph</title>
+        <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Orbitron:wght@600;800&display=swap" rel="stylesheet">
         <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
         <style type="text/css">
-            #mynetwork {{
-                width: 100%;
-                height: 560px;
-                background: #030712;
-                border: 1px solid rgba(0, 242, 254, 0.25);
-                border-radius: 12px;
-                box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.15);
+            * {{
+                box-sizing: border-box;
             }}
             body {{
                 margin: 0;
                 padding: 0;
                 overflow: hidden;
                 background: transparent;
+                font-family: 'Rajdhani', sans-serif;
             }}
-            .vis-tooltip {{
-                background: transparent !important;
-                border: none !important;
-                box-shadow: none !important;
-                padding: 0 !important;
+            #graph-wrapper {{
+                position: relative;
+                width: 100%;
+                height: 580px;
+                background: radial-gradient(circle at center, #0a1128 0%, #030712 100%);
+                border: 1px solid rgba(0, 242, 254, 0.3);
+                border-radius: 12px;
+                box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 242, 254, 0.15);
+                overflow: hidden;
+            }}
+            #mynetwork {{
+                width: 100%;
+                height: 100%;
+            }}
+            #floating-tooltip {{
+                display: none;
+                position: absolute;
+                background: rgba(7, 12, 24, 0.96);
+                border: 1px solid #00f2fe;
+                border-radius: 8px;
+                padding: 12px 14px;
+                color: #f8fafc;
+                font-family: 'Rajdhani', sans-serif;
+                box-shadow: 0 0 20px rgba(0, 242, 254, 0.45);
+                max-width: 310px;
+                z-index: 1000;
+                pointer-events: none;
+                backdrop-filter: blur(8px);
+                transition: opacity 0.15s ease;
+            }}
+            #node-hud {{
+                display: none;
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                width: 320px;
+                max-width: calc(100% - 30px);
+                background: rgba(5, 10, 20, 0.92);
+                border: 1px solid #00f2fe;
+                border-radius: 10px;
+                padding: 14px;
+                box-shadow: 0 0 25px rgba(0, 242, 254, 0.3), inset 0 0 20px rgba(0, 0, 0, 0.8);
+                color: #e2e8f0;
+                font-family: 'Rajdhani', sans-serif;
+                z-index: 990;
+                backdrop-filter: blur(10px);
+            }}
+            .tag-pill {{
+                display: inline-block;
+                background: rgba(0, 242, 254, 0.12);
+                border: 1px solid rgba(0, 242, 254, 0.3);
+                border-radius: 4px;
+                font-size: 11px;
+                padding: 2px 7px;
+                color: #a5f3fc;
+                margin-right: 4px;
+                margin-top: 4px;
+            }}
+            .cat-badge {{
+                display: inline-block;
+                padding: 2px 8px;
+                font-size: 11px;
+                font-weight: 700;
+                border-radius: 4px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 6px;
             }}
         </style>
     </head>
     <body>
-        <div id="mynetwork"></div>
+        <div id="graph-wrapper">
+            <div id="mynetwork"></div>
+            <div id="floating-tooltip"></div>
+            <div id="node-hud">
+                <div id="hud-category" class="cat-badge"></div>
+                <h4 id="hud-title" style="margin: 0 0 6px 0; color: #ffffff; font-size: 16px; font-weight: 700;"></h4>
+                <p id="hud-summary" style="font-size: 13px; color: #cbd5e1; margin: 0 0 8px 0; line-height: 1.4;"></p>
+                <div id="hud-tags"></div>
+            </div>
+        </div>
+        
         <script type="text/javascript">
-            var nodes = new vis.DataSet({nodes_json});
+            var rawNodes = {nodes_json};
+            var nodes = new vis.DataSet(rawNodes);
             var edges = new vis.DataSet({edges_json});
 
             var container = document.getElementById('mynetwork');
+            var wrapper = document.getElementById('graph-wrapper');
+            var tooltip = document.getElementById('floating-tooltip');
+            var hud = document.getElementById('node-hud');
+            var hudTitle = document.getElementById('hud-title');
+            var hudCat = document.getElementById('hud-category');
+            var hudSummary = document.getElementById('hud-summary');
+            var hudTags = document.getElementById('hud-tags');
+
             var data = {{
                 nodes: nodes,
                 edges: edges
             }};
+            
             var options = {{
                 nodes: {{
                     font: {{
                         size: 13,
-                        face: 'Rajdhani, Arial',
-                        color: '#f8fafc',
+                        face: 'Rajdhani, Arial, sans-serif',
+                        color: '#ffffff',
                         strokeWidth: 3,
                         strokeColor: '#030712'
                     }},
@@ -352,18 +422,91 @@ def get_graph_html(graph_data):
                     barnesHut: {{
                         gravitationalConstant: -9000,
                         springConstant: 0.035,
-                        springLength: 105,
+                        springLength: 110,
                         damping: 0.09
                     }}
                 }},
                 interaction: {{
                     hover: true,
-                    tooltipDelay: 60,
+                    tooltipDelay: 50,
                     zoomView: true,
                     dragView: true
                 }}
             }};
+            
             var network = new vis.Network(container, data, options);
+
+            function renderNodeDetails(nodeData) {{
+                if (!nodeData) return;
+                
+                var tagHtml = (nodeData.rawTags || []).map(function(t) {{
+                    return '<span class="tag-pill">#' + t + '</span>';
+                }}).join('');
+                
+                hudCat.innerText = nodeData.rawCategory;
+                hudCat.style.background = 'rgba(0, 242, 254, 0.15)';
+                hudCat.style.color = nodeData.rawColor || '#00f2fe';
+                hudCat.style.border = '1px solid ' + (nodeData.rawColor || '#00f2fe');
+                
+                hudTitle.innerText = nodeData.rawTitle || nodeData.label;
+                hudSummary.innerText = nodeData.rawSummary || 'No summary available.';
+                hudTags.innerHTML = tagHtml;
+                
+                hud.style.display = 'block';
+                hud.style.border = '1px solid ' + (nodeData.rawColor || '#00f2fe');
+            }}
+
+            network.on("hoverNode", function (params) {{
+                var nodeId = params.node;
+                var nodeData = nodes.get(nodeId);
+                if (nodeData) {{
+                    renderNodeDetails(nodeData);
+                    
+                    var tagHtml = (nodeData.rawTags || []).map(function(t) {{
+                        return '<span class="tag-pill">#' + t + '</span>';
+                    }}).join('');
+                    
+                    tooltip.innerHTML = '<div style="color:' + (nodeData.rawColor || '#00f2fe') + ';font-weight:700;font-size:14px;margin-bottom:4px;">' + (nodeData.rawTitle || nodeData.label) + '</div>' +
+                                        '<div style="font-size:11px;color:#94a3b8;margin-bottom:6px;text-transform:uppercase;">[' + nodeData.rawCategory + ']</div>' +
+                                        '<div style="font-size:12px;color:#e2e8f0;line-height:1.4;margin-bottom:6px;">' + (nodeData.rawSummary || 'No summary available.') + '</div>' +
+                                        '<div>' + tagHtml + '</div>';
+                    
+                    var pos = network.canvasToDOM(network.getPosition(nodeId));
+                    var left = pos.x + 18;
+                    var top = pos.y - 30;
+                    
+                    var maxLeft = wrapper.offsetWidth - 320;
+                    if (left > maxLeft) {{
+                        left = pos.x - 325;
+                    }}
+                    if (left < 10) left = 10;
+                    if (top < 10) top = 10;
+                    if (top > wrapper.offsetHeight - 160) {{
+                        top = wrapper.offsetHeight - 160;
+                    }}
+                    
+                    tooltip.style.left = left + 'px';
+                    tooltip.style.top = top + 'px';
+                    tooltip.style.border = '1px solid ' + (nodeData.rawColor || '#00f2fe');
+                    tooltip.style.display = 'block';
+                }}
+            }});
+
+            network.on("blurNode", function (params) {{
+                tooltip.style.display = 'none';
+            }});
+
+            network.on("selectNode", function (params) {{
+                var nodeId = params.nodes[0];
+                var nodeData = nodes.get(nodeId);
+                if (nodeData) {{
+                    renderNodeDetails(nodeData);
+                }}
+            }});
+
+            network.on("deselectNode", function (params) {{
+                hud.style.display = 'none';
+            }});
         </script>
     </body>
     </html>
@@ -496,9 +639,9 @@ def main():
                 
                 graph_html = get_graph_html(graph_data)
                 if hasattr(st, "iframe"):
-                    st.iframe(graph_html, height=580)
+                    st.iframe(graph_html, height=600)
                 else:
-                    components.html(graph_html, height=580)
+                    components.html(graph_html, height=600)
                 
                 # Legend
                 st.markdown("""
