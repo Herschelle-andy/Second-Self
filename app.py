@@ -656,16 +656,33 @@ def main():
                 with st.expander("📄 View Full Markdown Content"):
                     st.markdown(selected_note["body"])
                     
-                col_del_btn, col_del_space = st.columns([2, 4])
-                with col_del_btn:
-                    if st.button(f"🗑️ Delete Note", type="primary", use_container_width=True):
-                        with st.spinner("Deleting note, rebuilding graph, and syncing repository..."):
-                            ok, msg = delete_note(base_dir, selected_note["id"])
-                            if ok:
-                                st.session_state["delete_success"] = f"✅ Successfully deleted note: **{selected_note['title']}**."
-                                st.rerun()
+                is_app_capture = selected_note.get("source") == "app_capture"
+                
+                if not is_app_capture:
+                    st.info("🔒 **Protected Seed Note:** Pre-existing knowledge base notes are permanent and cannot be modified or deleted.")
+                else:
+                    st.markdown("#### 🔐 Authorization Required")
+                    admin_pin = st.text_input(
+                        "Enter Admin Passcode to authorize deletion:", 
+                        type="password", 
+                        placeholder="Enter passcode (Default: 1234)", 
+                        key=f"del_pin_{selected_note['id']}"
+                    )
+                    
+                    col_del_btn, col_del_space = st.columns([2, 4])
+                    with col_del_btn:
+                        if st.button("🗑️ Delete Note", type="primary", use_container_width=True):
+                            expected_pin = os.environ.get("ADMIN_PIN", "1234")
+                            if admin_pin.strip() != expected_pin:
+                                st.error("❌ Authentication Failed: Invalid Admin Passcode. Note was not deleted.")
                             else:
-                                st.error(f"Error deleting note: {msg}")
+                                with st.spinner("Deleting note, rebuilding graph, and syncing repository..."):
+                                    ok, msg = delete_note(base_dir, selected_note["id"])
+                                    if ok:
+                                        st.session_state["delete_success"] = f"✅ Successfully deleted note: **{selected_note['title']}**."
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Error deleting note: {msg}")
 
 if __name__ == "__main__":
     main()

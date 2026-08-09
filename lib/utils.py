@@ -94,24 +94,31 @@ def sync_to_github(base_dir, commit_message="Sync SecondSelf wiki updates via ap
         return False, str(e)
 
 def delete_note(base_dir, note_id):
-    """Delete a note from wiki directory and remove its links across all other notes."""
+    """Delete an app-captured note from wiki directory and remove its links across all other notes."""
     wiki_dir = os.path.join(base_dir, 'wiki')
     categories = ['Projects', 'Areas', 'Resources', 'Archives']
-    deleted = False
+    target_file = None
     
-    # 1. Find and remove the note file
+    # 1. Find the target note file
     for cat in categories:
-        target_file = os.path.join(wiki_dir, cat, f"{note_id}.md")
-        if os.path.exists(target_file):
-            try:
-                os.remove(target_file)
-                deleted = True
-                break
-            except Exception as e:
-                return False, f"Failed to delete file: {e}"
-                
-    if not deleted:
+        candidate_file = os.path.join(wiki_dir, cat, f"{note_id}.md")
+        if os.path.exists(candidate_file):
+            target_file = candidate_file
+            break
+            
+    if not target_file:
         return False, f"Note {note_id} not found."
+        
+    # Check if note is protected (seed / pre-existing)
+    fm, body = load_yaml_frontmatter(target_file)
+    if not fm or fm.get("source") != "app_capture":
+        return False, "Protected Note: Seed and pre-existing knowledge base notes cannot be deleted."
+        
+    # Remove file
+    try:
+        os.remove(target_file)
+    except Exception as e:
+        return False, f"Failed to delete file: {e}"
         
     # 2. Clean up bidirectional links in other notes
     for root, dirs, files in os.walk(wiki_dir):
