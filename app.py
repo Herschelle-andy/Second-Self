@@ -17,13 +17,13 @@ import ask
 
 # Page styling & Configuration
 st.set_page_config(
-    page_title="SecondSelf // Synaptic Matrix",
+    page_title="SecondSelf - AI Second Brain",
     page_icon="🧠",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# ------------------ SCI-FI / NEURAL MATRIX THEME CSS ------------------
+# ------------------ SCI-FI / NEURAL NETWORK THEME CSS ------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@600;800;900&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
@@ -51,42 +51,25 @@ st.markdown("""
         z-index: 0;
     }
 
-    /* Titles & Sci-Fi Headers */
-    .cyber-title {
-        font-family: 'Orbitron', sans-serif;
+    /* Main Title */
+    .main-title {
+        font-family: 'Orbitron', 'Inter', sans-serif;
         font-weight: 900;
-        font-size: 2.6rem;
+        font-size: 2.8rem;
         letter-spacing: 2px;
-        background: linear-gradient(90deg, #00f2fe 0%, #4facfe 40%, #00ff87 70%, #f72585 100%);
+        background: linear-gradient(90deg, #00f2fe 0%, #4facfe 50%, #00ff87 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         text-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
-        margin-bottom: 0.1rem;
-        display: flex;
-        align-items: center;
-        gap: 12px;
+        margin-bottom: 0.2rem;
     }
     
-    .cyber-subtitle {
+    .subtitle {
         font-family: 'Rajdhani', sans-serif;
         color: #94a3b8;
         font-size: 1.15rem;
-        letter-spacing: 1.5px;
-        text-transform: uppercase;
-        margin-bottom: 1.8rem;
-    }
-    
-    .cyber-badge {
-        display: inline-block;
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.75rem;
-        padding: 3px 8px;
-        border-radius: 4px;
-        background: rgba(0, 242, 254, 0.12);
-        border: 1px solid #00f2fe;
-        color: #00f2fe;
         letter-spacing: 1px;
-        box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+        margin-bottom: 2rem;
     }
     
     .cyber-card {
@@ -115,12 +98,11 @@ st.markdown("""
     }
     
     .stTabs [data-baseweb="tab"] {
-        height: 46px;
+        height: 48px;
         font-family: 'Rajdhani', sans-serif;
         font-size: 1.05rem;
         font-weight: 700;
-        letter-spacing: 1px;
-        text-transform: uppercase;
+        letter-spacing: 0.5px;
         color: #94a3b8;
         background-color: transparent;
         border-radius: 6px;
@@ -148,8 +130,7 @@ st.markdown("""
         font-family: 'Rajdhani', sans-serif;
         font-size: 1.05rem;
         font-weight: 700;
-        letter-spacing: 1.2px;
-        text-transform: uppercase;
+        letter-spacing: 1px;
         border-radius: 6px;
         transition: all 0.25s ease;
     }
@@ -198,58 +179,58 @@ st.markdown("""
 
 # ------------------ PIPELINE EXECUTION ------------------
 def run_post_capture_pipeline(base_dir):
-    """Run classify, link, and graph builder sequentially with sci-fi status feedback."""
+    """Run classify, link, and graph builder sequentially."""
     status_placeholder = st.empty()
-    with status_placeholder.status("⚡ INITIATING SYNAPTIC INTEGRATION PIPELINE...", expanded=True) as status:
+    with status_placeholder.status("Processing captured item (AI Organizing & Linking)...", expanded=True) as status:
         try:
-            status.write("🧠 [NEURAL PARSER] Classifying document via Llama-3 PARA matrix...")
+            status.write("Classifying note via Llama-3 (PARA)...")
             classify.process_raw_captures(base_dir)
             
-            status.write("🔗 [SYNAPSE WEAVER] Computing vector embeddings & dynamic links...")
+            status.write("Computing semantic embeddings & linking related notes...")
             wiki_dir = os.path.join(base_dir, 'wiki')
             link.link_notes(wiki_dir, similarity_threshold=0.45)
             
-            status.write("🌐 [NEURAL GRAPH] Rebuilding interactive topological matrix...")
+            status.write("Rebuilding knowledge graph structure...")
             output_json = os.path.join(base_dir, 'graph.json')
             build_graph.build_graph_data(wiki_dir, output_json)
             
-            status.write("📡 [QUANTUM REPO SYNC] Pushing updates to GitHub remote...")
+            status.write("Syncing knowledge base to GitHub repository...")
             sync_ok, sync_msg = sync_to_github(base_dir)
             
-            status.update(label="✅ [SYNAPTIC CORE UPDATED] Neural matrix synchronized!", state="complete", expanded=False)
+            status.update(label="Second Brain updated successfully!", state="complete", expanded=False)
             if sync_ok:
-                st.session_state["capture_success"] = "⚡ Synapse captured, integrated, and synced to GitHub!"
+                st.session_state["capture_success"] = "Successfully captured, classified, and synced to GitHub!"
             else:
-                st.session_state["capture_success"] = "⚡ Synapse captured and connected in knowledge graph!"
+                st.session_state["capture_success"] = "Successfully captured, classified, and linked your new note!"
             st.rerun()
         except Exception as e:
-            status.update(label=f"❌ [CORE ERROR] {e}", state="error")
-            st.error(f"Synaptic Pipeline Error: {e}")
+            status.update(label=f"Pipeline error: {e}", state="error")
+            st.error(f"Post-capture pipeline encountered an error: {e}")
 
 # ------------------ VIS-NETWORK NEURAL GRAPH HTML ------------------
 def get_graph_html(graph_data):
-    # Sci-Fi / Cyber Neural Color Mapping
+    # Sci-Fi / Neural Network Color Mapping for PARA categories
     color_map = {
         "Projects": {
             "background": "#00f2fe", 
             "border": "#38bdf8", 
             "highlight": {"background": "#ffffff", "border": "#00f2fe"}
-        }, # Neon Cyan Action Cortices
+        }, # Neon Cyan
         "Areas": {
             "background": "#00ff87", 
             "border": "#34d399", 
             "highlight": {"background": "#ffffff", "border": "#00ff87"}
-        },    # Bio-Neural Emerald Standards
+        },    # Emerald Green
         "Resources": {
             "background": "#ffb703", 
             "border": "#fbbf24", 
             "highlight": {"background": "#ffffff", "border": "#ffb703"}
-        },# Memory Amber Data-Banks
+        },# Amber Yellow
         "Archives": {
             "background": "#a855f7", 
             "border": "#c084fc", 
             "highlight": {"background": "#ffffff", "border": "#a855f7"}
-        }  # Cosmic Ultraviolet Cold Storage
+        }  # Cosmic Purple
     }
     
     formatted_nodes = []
@@ -259,10 +240,9 @@ def get_graph_html(graph_data):
         
         tooltip = f"""
         <div style="font-family: 'Rajdhani', Arial, sans-serif; padding: 14px; width: 280px; background: rgba(7, 12, 24, 0.95); border: 1px solid #00f2fe; border-radius: 8px; box-shadow: 0 0 15px rgba(0, 242, 254, 0.4); color: #e2e8f0;">
-            <div style="font-size: 11px; font-family: monospace; color: #00f2fe; letter-spacing: 1px; margin-bottom: 4px;">// NODE_ID: {node['id'][:18]}</div>
             <b style="font-size: 16px; color: #ffffff; letter-spacing: 0.5px;">{node['label']}</b><br/>
             <span style="display: inline-block; background: rgba(0, 242, 254, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.4); padding: 2px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; margin-top: 6px; margin-bottom: 8px;">
-                {cat.upper()}
+                {cat}
             </span><br/>
             <p style="font-size: 12px; margin: 0; color: #94a3b8; line-height: 1.4;">{node.get('summary', 'No summary available.')}</p>
             <div style="margin-top: 8px;">
@@ -312,7 +292,7 @@ def get_graph_html(graph_data):
     <!DOCTYPE html>
     <html>
     <head>
-        <title>SecondSelf Neural Graph</title>
+        <title>SecondSelf Graph</title>
         <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
         <style type="text/css">
             #mynetwork {{
@@ -444,68 +424,64 @@ def main():
         st.sidebar.error(st.session_state["capture_error"])
         del st.session_state["capture_error"]
     
-    # Sci-Fi Top Header HUD
-    st.markdown('''
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 5px;">
-            <h1 class="cyber-title">⚡ SECOND_SELF // NEURAL MATRIX 🧠</h1>
-            <span class="cyber-badge">● SYNAPTIC CORE ONLINE</span>
-        </div>
-        <p class="cyber-subtitle">Autonomous Cognitive Synapse & Knowledge Architecture</p>
-    ''', unsafe_allow_html=True)
+    # Title
+    st.markdown('<h1 class="main-title">🧠 SecondSelf</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Your self-organizing personal AI Second Brain</p>', unsafe_allow_html=True)
     
-    # ------------------ SIDEBAR: SYNAPSE INGESTION ------------------
+    # ------------------ SIDEBAR: INGESTION PIPELINE ------------------
     if "capture_success" in st.session_state:
         st.sidebar.success(st.session_state["capture_success"])
         del st.session_state["capture_success"]
         
-    st.sidebar.markdown("### 📥 SYNAPSE INGESTION")
-    capture_type = st.sidebar.radio("Input Modality", ["Note / Thought", "URL / Bookmark", "Neural Document Upload"])
+    st.sidebar.markdown("### 📥 Capture Anything")
+    capture_type = st.sidebar.radio("Input Type", ["Note", "Link / Bookmark", "File Upload"])
     
-    if capture_type == "Note / Thought":
-        st.sidebar.text_area("Transmit raw thought or data packet:", placeholder="E.g., Investigate CUDA kernel optimization libraries for multimodal reasoning next sprint.", height=150, key="note_input_widget")
-        st.sidebar.button("⚡ CAPTURE SYNAPSE", use_container_width=True, on_click=capture_note_callback, args=(raw_dir,))
+    if capture_type == "Note":
+        st.sidebar.text_area("Write down an idea or note", placeholder="E.g., Remind me to look at visual analytics tools for Python next Monday.", height=150, key="note_input_widget")
+        st.sidebar.button("Capture Note", use_container_width=True, on_click=capture_note_callback, args=(raw_dir,))
                 
-    elif capture_type == "URL / Bookmark":
-        st.sidebar.text_area("Target URL for neural web scraping:", placeholder="https://github.com/trending", height=150, key="link_input_widget")
-        st.sidebar.button("⚡ EXTRACT & INDEX URL", use_container_width=True, on_click=capture_link_callback, args=(raw_dir,))
+    elif capture_type == "Link / Bookmark":
+        st.sidebar.text_area("URL to scrape & capture", placeholder="https://github.com/trending", height=150, key="link_input_widget")
+        st.sidebar.button("Capture Link", use_container_width=True, on_click=capture_link_callback, args=(raw_dir,))
                 
-    elif capture_type == "Neural Document Upload":
-        uploaded_file = st.sidebar.file_uploader("Ingest document (TXT, MD, PDF, JSON)", type=["txt", "md", "json", "html", "pdf"], key="file_input_widget")
+    elif capture_type == "File Upload":
+        uploaded_file = st.sidebar.file_uploader("Upload note, article, or PDF", type=["txt", "md", "json", "html", "pdf"], key="file_input_widget")
         if uploaded_file is not None:
-            st.sidebar.button("⚡ INGEST FILE PAYLOAD", use_container_width=True, on_click=capture_file_callback, args=(raw_dir, base_dir))
+            st.sidebar.button("Capture Uploaded File", use_container_width=True, on_click=capture_file_callback, args=(raw_dir, base_dir))
             
-    st.sidebar.markdown("### ⚡ MANUAL SYNC")
-    if st.sidebar.button("SYNCHRONIZE PIPELINE", use_container_width=True):
+    st.sidebar.markdown("### ⚡ Manual Action")
+    if st.sidebar.button("Process New Capture", use_container_width=True):
         run_post_capture_pipeline(base_dir)
         
-    # Telemetry in sidebar footer
+    # Display configuration/API check in sidebar footer
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### ⚙️ SYSTEM TELEMETRY")
-    groq_api_status = "🟢 OPERATIONAL" if os.environ.get("GROQ_API_KEY") else "🔴 OFFLINE"
-    st.sidebar.markdown(f"**Groq Llama-3:** `{groq_api_status}`")
+    st.sidebar.markdown("### ⚙️ System Status")
+    groq_api_status = "✅ Set" if os.environ.get("GROQ_API_KEY") else "❌ Missing (Set GROQ_API_KEY environment var)"
+    st.sidebar.write(f"Groq API: {groq_api_status}")
     
+    # Load notes for display/stats
     wiki_notes = ask.load_all_notes(wiki_dir)
-    st.sidebar.markdown(f"**Active Synaptic Nodes:** `[{len(wiki_notes)}]`")
+    st.sidebar.write(f"Total Wiki Notes: **{len(wiki_notes)}**")
     
     # ------------------ MAIN SECTION: TABS ------------------
     tab1, tab2, tab3, tab4 = st.tabs([
-        "🌐 LIVING NEURAL GRAPH", 
-        "🔍 SYNAPTIC RAG QUERY", 
-        "📚 MEMORY VAULT", 
-        "🗑️ SYNAPSE MANAGER"
+        "🌐 Living Brain Graph", 
+        "🔍 Ask Your Brain (RAG)", 
+        "📚 Browse Wiki Notes", 
+        "🗑️ Manage & Delete Notes"
     ])
     
-    # ------------------ TAB 1: NEURAL GRAPH ------------------
+    # ------------------ TAB 1: GRAPH ------------------
     with tab1:
-        st.markdown("### 🌐 Dynamic Force-Directed Synapse Network")
-        st.caption("Live neural topology. Hover nodes for memory telemetry. Drag to pivot, scroll to calibrate zoom.")
+        st.markdown("### Interactive Knowledge Graph")
+        st.caption("Hover over nodes to see summaries. Drag to move, pinch/scroll to zoom.")
         
         graph_path = os.path.join(base_dir, 'graph.json')
         if not os.path.exists(graph_path) or len(wiki_notes) == 0:
             if len(wiki_notes) > 0:
                 build_graph.build_graph_data(wiki_dir, graph_path)
             else:
-                st.info("No synaptic memories ingested yet. Transmit notes via the left panel to ignite the matrix!")
+                st.info("No captured notes to display yet. Capture some items on the sidebar to build your brain!")
                 
         if os.path.exists(graph_path) and len(wiki_notes) > 0:
             try:
@@ -518,122 +494,122 @@ def main():
                 else:
                     components.html(graph_html, height=580)
                 
-                # Sci-Fi Legend HUD
+                # Legend
                 st.markdown("""
                 <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 12px; padding: 10px 16px; background: rgba(13, 21, 39, 0.6); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 8px;">
-                    <span style="color: #00f2fe; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🔵 PROJECTS // ACTION CORTICES</span>
-                    <span style="color: #00ff87; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🟢 AREAS // SYSTEM PILLARS</span>
-                    <span style="color: #ffb703; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🟡 RESOURCES // MEMORY DATA-BANKS</span>
-                    <span style="color: #a855f7; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🟣 ARCHIVES // COLD STORAGE</span>
+                    <span style="color: #00f2fe; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🔵 Projects (Goal-oriented)</span>
+                    <span style="color: #00ff87; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🟢 Areas (Ongoing Standards)</span>
+                    <span style="color: #ffb703; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🟡 Resources (Interests & Tools)</span>
+                    <span style="color: #a855f7; font-weight: bold; font-family: 'Rajdhani', sans-serif;">🟣 Archives (Inactive)</span>
                 </div>
                 """, unsafe_allow_html=True)
             except Exception as e:
-                st.error(f"Neural Visualization Telemetry Failure: {e}")
+                st.error(f"Error displaying graph: {e}")
                 
-    # ------------------ TAB 2: SYNAPTIC RAG QUERY ------------------
+    # ------------------ TAB 2: RAG QUERY ------------------
     with tab2:
-        st.markdown("### 🔍 Query the SecondSelf Synaptic Matrix")
-        st.caption("Direct vector-search and LLM synthesis querying your neural document embeddings.")
+        st.markdown("### Ask your SecondSelf anything")
+        st.caption("Natural language search synthesizing answers exclusively from your captured documents.")
         
-        query = st.text_input("Transmit inquiry to neural memory banks:", placeholder="E.g., What algorithms or libraries did I store regarding vector search?", key="query_input_widget")
+        query = st.text_input("Ask a question about your knowledge base:", placeholder="What did I note down about visual analytics libraries?", key="query_input_widget")
         
         col_btn_left, col_btn_mid, col_btn_right = st.columns([1, 4, 1])
         with col_btn_left:
-            st.button("⚡ QUERY MATRIX", type="primary", on_click=query_brain_callback, args=(wiki_dir,))
+            st.button("Query Brain", type="primary", on_click=query_brain_callback, args=(wiki_dir,))
         with col_btn_right:
             if "rag_answer" in st.session_state:
-                if st.button("RESET QUERY", type="primary"):
+                if st.button("Clear Results", type="primary"):
                     del st.session_state["rag_query"]
                     del st.session_state["rag_answer"]
                     del st.session_state["rag_sources"]
                     st.rerun()
                 
-        # Query results HUD
+        # Persistent display of query results
         if "rag_answer" in st.session_state:
             st.markdown("---")
-            st.markdown(f"❓ **SYNAPTIC PROMPT:** *{st.session_state['rag_query']}*")
+            st.markdown(f"❓ **Question:** *{st.session_state['rag_query']}*")
             
             st.markdown(f"""
             <div class="cyber-card" style="border-left: 4px solid #00f2fe;">
-                <div style="font-family: 'Orbitron', sans-serif; font-size: 13px; color: #00f2fe; margin-bottom: 8px; letter-spacing: 1px;">// SYNTHESIZED NEURAL RESPONSE:</div>
+                <div style="font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: bold; color: #00f2fe; margin-bottom: 8px;">Response:</div>
                 <div style="color: #f1f5f9; line-height: 1.6;">{st.session_state["rag_answer"]}</div>
             </div>
             """, unsafe_allow_html=True)
             
             sources = st.session_state.get("rag_sources", [])
             if sources:
-                st.markdown("#### 📡 RETRIEVED MEMORY CITATIONS:")
+                st.markdown("#### Retrieved Sources:")
                 cols = st.columns(len(sources))
                 for idx, src in enumerate(sources):
                     with cols[idx]:
                         card_style = f"""
                         <div class="cyber-card" style="padding: 12px; border-radius: 8px; border: 1px solid rgba(0, 242, 254, 0.3); background: rgba(8, 14, 28, 0.85);">
-                            <div style="font-size: 10px; font-family: monospace; color: #00f2fe; margin-bottom: 2px;">RELEVANCE: {src['score']:.2f}</div>
+                            <div style="font-size: 10px; font-family: monospace; color: #00f2fe; margin-bottom: 2px;">Relevancy: {src['score']:.2f}</div>
                             <h5 style="margin: 0; color: #ffffff; font-family: 'Rajdhani', sans-serif; font-size: 15px;">{src['title']}</h5>
-                            <span style="font-size: 10px; color: #38bdf8; font-weight: bold; text-transform: uppercase;">[{src['category']}]</span>
+                            <span style="font-size: 10px; color: #38bdf8; font-weight: bold;">[{src['category']}]</span>
                         </div>
                         """
                         st.markdown(card_style, unsafe_allow_html=True)
                 
-    # ------------------ TAB 3: BROWSE MEMORY VAULT ------------------
+    # ------------------ TAB 3: BROWSE WIKI ------------------
     with tab3:
-        st.markdown("### 📚 Synaptic Memory Vault")
+        st.markdown("### Browse Wiki Knowledge Base")
         if not wiki_notes:
-            st.info("Memory vault is empty. Ingest notes to populate.")
+            st.info("Knowledge base is empty. Capture notes to populate.")
         else:
             categories = ['Projects', 'Areas', 'Resources', 'Archives']
-            selected_cat = st.selectbox("Filter by Cognitive Domain", ["All Domains"] + categories)
+            selected_cat = st.selectbox("Filter Category", ["All"] + categories)
             
             filtered_notes = [
                 n for n in wiki_notes 
-                if selected_cat == "All Domains" or n["category"] == selected_cat
+                if selected_cat == "All" or n["category"] == selected_cat
             ]
             
             if not filtered_notes:
-                st.write("No nodes indexed in this domain.")
+                st.write("No notes found in this category.")
             else:
                 for note in filtered_notes:
-                    with st.expander(f"📁 [{note['category'].upper()}] // {note['title']}"):
-                        st.markdown(f"**Indexed Timestamp**: `{note.get('captured_at', 'Unknown')}`")
-                        st.markdown(f"**Synaptic Tags**: `{' '.join([f'#{t}' for t in note.get('tags', [])])}`")
-                        st.markdown(f"**Summary Telemetry**: *{note.get('summary', 'No summary available.')}*")
+                    with st.expander(f"📁 {note['category']} | {note['title']}"):
+                        st.markdown(f"**Captured At**: `{note.get('captured_at', 'Unknown')}`")
+                        st.markdown(f"**Tags**: `{' '.join([f'#{t}' for t in note.get('tags', [])])}`")
+                        st.markdown(f"**Summary**: *{note.get('summary', 'No summary available.')}*")
                         st.markdown("---")
                         st.markdown(note["body"])
                         
-    # ------------------ TAB 4: SYNAPSE MANAGER ------------------
+    # ------------------ TAB 4: MANAGE & DELETE ------------------
     with tab4:
-        st.markdown("### 🗑️ Synapse & Memory Manager")
-        st.caption("Inspect indexed memories or permanently purge nodes from the knowledge matrix and GitHub repository.")
+        st.markdown("### 🗑️ Manage & Delete Notes")
+        st.caption("Select notes to review their details or permanently delete them from your knowledge base and GitHub repository.")
         
         if "delete_success" in st.session_state:
             st.success(st.session_state["delete_success"])
             del st.session_state["delete_success"]
             
         if not wiki_notes:
-            st.info("No nodes in knowledge matrix.")
+            st.info("Your knowledge base is empty. There are no notes to manage.")
         else:
             col_filter_src, col_filter_cat = st.columns(2)
             with col_filter_src:
                 src_filter = st.selectbox(
-                    "Filter Origin", 
-                    ["All Nodes", "App Captures Only (⭐ Newly Captured)", "Pre-existing Seed Nodes"]
+                    "Filter by Origin", 
+                    ["All Notes", "App Captures Only (⭐ Newly Captured)", "Pre-existing / Seed Notes"]
                 )
             with col_filter_cat:
-                cat_filter = st.selectbox("Filter Domain", ["All Domains", "Projects", "Areas", "Resources", "Archives"], key="del_cat_filter")
+                cat_filter = st.selectbox("Filter by PARA Category", ["All", "Projects", "Areas", "Resources", "Archives"], key="del_cat_filter")
                 
             manage_notes = []
             for n in wiki_notes:
                 is_app = n.get("source") == "app_capture"
                 if src_filter == "App Captures Only (⭐ Newly Captured)" and not is_app:
                     continue
-                if src_filter == "Pre-existing Seed Nodes" and is_app:
+                if src_filter == "Pre-existing / Seed Notes" and is_app:
                     continue
-                if cat_filter != "All Domains" and n["category"] != cat_filter:
+                if cat_filter != "All" and n["category"] != cat_filter:
                     continue
                 manage_notes.append(n)
                 
             if not manage_notes:
-                st.info("No nodes match query criteria.")
+                st.info("No notes match the selected filters.")
             else:
                 def format_timestamp(note):
                     raw_time = note.get("captured_at", "")
@@ -651,45 +627,45 @@ def main():
                 note_options = {}
                 for n in manage_notes:
                     time_str = format_timestamp(n)
-                    origin_tag = "⭐ APP SYNAPSE" if n.get("source") == "app_capture" else "📁 SEED"
+                    origin_tag = "⭐ App Capture" if n.get("source") == "app_capture" else "📁 Seed Note"
                     label = f"[{time_str}] {n['title']} ({n['category']}) — {origin_tag}"
                     note_options[label] = n
                     
                 selected_label = st.selectbox(
-                    "Select node to inspect or purge:",
+                    "Select a note from the menu to inspect or delete:",
                     list(note_options.keys())
                 )
                 
                 selected_note = note_options[selected_label]
                 time_str = format_timestamp(selected_note)
-                origin_badge = "🟢 Live App Capture" if selected_note.get("source") == "app_capture" else "⚪ Seed Memory"
+                origin_badge = "🟢 New App Capture" if selected_note.get("source") == "app_capture" else "⚪ Pre-existing"
                 
                 st.markdown(f"""
                 <div class="cyber-card" style="border-left: 4px solid #f72585;">
                     <h4 style="margin-top: 0; color: #ffffff; font-family: 'Rajdhani', sans-serif;">{selected_note['title']}</h4>
                     <p style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">
-                        <b>Domain:</b> <span style="color: #00f2fe;">{selected_note['category']}</span> &nbsp;|&nbsp; 
-                        <b>Timestamp:</b> <code>{time_str}</code> &nbsp;|&nbsp;
+                        <b>Category:</b> <span style="color: #00f2fe;">{selected_note['category']}</span> &nbsp;|&nbsp; 
+                        <b>Captured Date & Time:</b> <code>{time_str}</code> &nbsp;|&nbsp;
                         <b>Origin:</b> {origin_badge}
                     </p>
-                    <p style="font-size: 13px; color: #cbd5e1;"><b>Telemetry Summary:</b> {selected_note.get('summary', 'No summary available.')}</p>
-                    <p style="font-size: 11px; color: #64748b;"><b>Matrix Path:</b> <code>{selected_note['path']}</code></p>
+                    <p style="font-size: 13px; color: #cbd5e1;"><b>Summary:</b> {selected_note.get('summary', 'No summary available.')}</p>
+                    <p style="font-size: 11px; color: #64748b;"><b>File Path:</b> <code>{selected_note['path']}</code></p>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                with st.expander("📄 View Raw Node Markdown Payload"):
+                with st.expander("📄 View Full Markdown Content"):
                     st.markdown(selected_note["body"])
                     
                 col_del_btn, col_del_space = st.columns([2, 4])
                 with col_del_btn:
-                    if st.button(f"🗑️ PURGE NODE FROM MATRIX", type="primary", use_container_width=True):
-                        with st.spinner("Purging node, updating neural graph, and syncing repository..."):
+                    if st.button(f"🗑️ Delete Note", type="primary", use_container_width=True):
+                        with st.spinner("Deleting note, rebuilding graph, and syncing repository..."):
                             ok, msg = delete_note(base_dir, selected_note["id"])
                             if ok:
-                                st.session_state["delete_success"] = f"✅ Successfully purged node: **{selected_note['title']}**."
+                                st.session_state["delete_success"] = f"✅ Successfully deleted note: **{selected_note['title']}**."
                                 st.rerun()
                             else:
-                                st.error(f"Purge failure: {msg}")
+                                st.error(f"Error deleting note: {msg}")
 
 if __name__ == "__main__":
     main()
